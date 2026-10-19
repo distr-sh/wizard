@@ -1,0 +1,43 @@
+{
+  "name": "@distr-sh/wizard",
+  "description": "Set up Distr and ship your first application to a self-managed customer",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "homepage": "https://distr.sh",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/distr-sh/wizard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/distr-sh/wizard/issues"
+  },
+  "keywords": [
+    "distr",
+    "self-managed",
+    "on-premises",
+    "software-distribution"
+  ],
+  "bin": {
+    "distr-wizard": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc && esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/index.js",
+    "test": "node --test 'src/**/*.test.ts'",
+    "lint": "prettier --check .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@distr-sh/distr-sdk": "^4.5.0",
+    "@types/node": "^22.20.5",
+    "esbuild": "^0.28.2",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2"
+  }
+}

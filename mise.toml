@@ -1,0 +1,15 @@
+[tools]
+node = "26"
+pnpm = "12.14.0"
+
+[tasks.build]
+run = "pnpm build"
+
+[tasks.test]
+run = "pnpm test"
+
+[tasks.lint]
+run = "pnpm lint"
+
+[tasks.format]
+run = "pnpm format"
