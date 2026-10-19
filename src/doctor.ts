@@ -1,9 +1,7 @@
 import {Client} from '@distr-sh/distr-sdk';
-import {execFile} from 'node:child_process';
-import {promisify} from 'node:util';
+import {WizardError} from './errors.ts';
+import {docker} from './process.ts';
 import {isAtLeast, parseVersion, type Version} from './version.ts';
-
-const execFileAsync = promisify(execFile);
 
 const defaultApiBase = 'https://app.distr.sh/api/v1';
 const minimumDockerEngine: Version = [29, 0, 0];
@@ -14,19 +12,15 @@ export type CheckResult = {
   detail: string;
 };
 
-async function commandOutput(file: string, args: string[]): Promise<string | undefined> {
-  try {
-    const {stdout} = await execFileAsync(file, args, {timeout: 15_000});
-    return stdout.trim();
-  } catch {
-    return undefined;
-  }
+async function commandOutput(args: string[]): Promise<string | undefined> {
+  const output = await docker(args);
+  return output.code === 0 ? output.stdout.trim() : undefined;
 }
 
-async function checkDockerEngine(): Promise<CheckResult> {
+export async function checkDockerEngine(): Promise<CheckResult> {
   const name = 'Docker Engine';
   const minimum = minimumDockerEngine.join('.');
-  const output = await commandOutput('docker', ['version', '--format', '{{.Server.Version}}']);
+  const output = await commandOutput(['version', '--format', '{{.Server.Version}}']);
   if (output === undefined) {
     return {name, ok: false, detail: 'not reachable, install Docker and start the Docker daemon'};
   }
@@ -40,9 +34,9 @@ async function checkDockerEngine(): Promise<CheckResult> {
   }
 }
 
-async function checkDockerCompose(): Promise<CheckResult> {
+export async function checkDockerCompose(): Promise<CheckResult> {
   const name = 'Docker Compose';
-  const output = await commandOutput('docker', ['compose', 'version', '--short']);
+  const output = await commandOutput(['compose', 'version', '--short']);
   if (output === undefined) {
     return {name, ok: false, detail: 'the docker compose plugin is missing'};
   }
@@ -65,4 +59,15 @@ export async function doctor(env: NodeJS.ProcessEnv): Promise<CheckResult[]> {
     checks.push(checkDistrToken(env.DISTR_API_BASE || defaultApiBase, env.DISTR_TOKEN));
   }
   return Promise.all(checks);
+}
+
+export async function requireDocker(): Promise<string> {
+  const [engine, compose] = await Promise.all([checkDockerEngine(), checkDockerCompose()]);
+  if (!engine.ok) {
+    const blocker = engine.detail.startsWith('not reachable') ? 'docker_missing' : 'docker_outdated';
+    throw new WizardError(`Docker Engine: ${engine.detail}.`, 'preflight', blocker);
+  } else if (!compose.ok) {
+    throw new WizardError(`Docker Compose: ${compose.detail}.`, 'preflight', 'docker_missing');
+  }
+  return compose.detail;
 }
