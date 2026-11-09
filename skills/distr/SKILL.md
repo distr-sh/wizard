@@ -141,8 +141,8 @@ Write `deploy/distr/HANDOFF.md`:
 - What runs where, with links to the application (`https://app.distr.sh/applications/<id>`), the test customer's deployment (`https://app.distr.sh/deployments/<target id>`) and the vendor portal branding (`https://app.distr.sh/branding`).
 - Every file you wrote and what is in it.
 - How to clean up: undeploy and delete the test target in Distr, then remove the controller with `docker stop distr-controller-1 && docker rm distr-controller-1`.
-- The next steps: invite a first real customer to the customer portal, publish new versions from CI with the [Distr GitHub Action](https://distr.sh/docs/integrations/github-actions/) and [book an onboarding call](https://cal.glasskube.com/team/gk/demo?duration=30).
+- The next steps: invite a first real customer to the customer portal, publish new versions from CI with the [Distr GitHub Action](https://distr.sh/docs/integrations/github-actions/) and [book an onboarding call](https://cal.glasskube.com/team/gk/distr-onboarding).
 
-When you are blocked, write `deploy/distr/BLOCKED.md` instead: what failed, the error, what you tried and what the user can do next, and offer the onboarding call.
+When you are blocked, write `deploy/distr/BLOCKED.md` instead: what failed, the error, what you tried and what the user can do next, and offer the [onboarding call](https://cal.glasskube.com/team/gk/distr-onboarding).
 
 End with a short summary in the chat and offer to commit `deploy/distr/`.
