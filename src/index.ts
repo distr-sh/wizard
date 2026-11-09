@@ -2,11 +2,13 @@
 import {readFile} from 'node:fs/promises';
 import {parseArgs} from 'node:util';
 import {doctor} from './doctor.ts';
+import {login} from './login.ts';
 
 const usage = `Usage: distr-wizard <command>
 
 Commands:
   doctor    Check that this machine can run Distr locally, and that DISTR_TOKEN works when it is set
+  login     Ask for a personal access token without showing it, check it and save it for coding agents
 
 Options:
   -h, --help       Show this help
@@ -44,6 +46,8 @@ async function main(): Promise<void> {
     if (results.some((result) => !result.ok)) {
       process.exitCode = 1;
     }
+  } else if (command === 'login') {
+    process.exitCode = await login(process.env);
   } else {
     process.stderr.write(`Unknown command "${command}"\n\n${usage}`);
     process.exitCode = 2;
