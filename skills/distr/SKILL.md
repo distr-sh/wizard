@@ -98,7 +98,7 @@ Write into `deploy/distr/`:
 
 The customer's controller has to be able to pull every image. Public images work as they are. Images built from this repository have to be pushed to a registry, the Distr registry by default (`references/api.md#registry`).
 
-Ask, then test the package on this machine before Distr is involved: `docker compose config`, then `up -d`, check that the application answers, then `down -v`. For Helm run `helm lint` and `helm template`. Fix what fails before you continue.
+Ask, then test the package on this machine before Distr is involved, with a filled-in copy of `test-customer.env` outside the repository (`references/packaging.md#local-test`): `docker compose config`, then `up -d`, check that the application answers, then `down -v`. For Helm run `helm lint` and `helm template`. Fix what fails before you continue.
 
 ## 5. Get access to Distr
 
@@ -122,6 +122,8 @@ Follow the recipes in `references/api.md`, and write every ID into `deploy/distr
 
 ## 7. Deploy to a test customer
 
+A Helm deployment needs a Kubernetes cluster on this machine, so check before you create anything in this phase. When `kubectl config current-context` names a local cluster such as kind, k3d, minikube, Docker Desktop or OrbStack, ask whether to use it. Otherwise skip to phase 8 and explain that the chart is in Distr and ready to deploy.
+
 Follow `references/api.md`:
 
 1. Create the customer "Test customer" with `assets/test-customer-logo.png` as its logo (`#customer`).
@@ -129,8 +131,6 @@ Follow `references/api.md`:
 3. Create a deployment target for the test customer (`#target`) and the deployment (`#deployment`).
 4. Ask, then connect the controller on this machine (`#connect`).
 5. Wait until the deployment is healthy, check that the application answers and read its logs in Distr (`#status`).
-
-A Helm deployment needs a Kubernetes cluster on this machine. When `kubectl config current-context` names a local cluster such as kind, k3d, minikube, Docker Desktop or OrbStack, ask whether to use it. Otherwise stop after phase 6 and explain that the chart is in Distr and ready to deploy.
 
 When a deployment fails, follow `references/troubleshooting.md`.
 
@@ -140,7 +140,7 @@ Write `deploy/distr/HANDOFF.md`:
 
 - What runs where, with links to the application (`https://app.distr.sh/applications/<id>`), the test customer's deployment (`https://app.distr.sh/deployments/<target id>`) and the vendor portal branding (`https://app.distr.sh/branding`).
 - Every file you wrote and what is in it.
-- How to clean up: undeploy and delete the test target in Distr, then remove the controller with `docker stop distr-controller-1 && docker rm distr-controller-1`.
+- How to clean up: undeploy and delete the test target in Distr, then remove the controller. A Docker controller goes with `docker stop distr-controller-1 && docker rm distr-controller-1`, a Kubernetes one with `kubectl delete -n <namespace> deployment/distr-controller secrets/distr-controller-auth configmaps/distr-controller-env serviceaccounts/distr-controller clusterrolebindings/distr-controller-<namespace>`.
 - The next steps: invite a first real customer to the customer portal, publish new versions from CI with the [Distr GitHub Action](https://distr.sh/docs/integrations/github-actions/) and [book an onboarding call](https://cal.glasskube.com/team/gk/distr-onboarding).
 
 When you are blocked, write `deploy/distr/BLOCKED.md` instead: what failed, the error, what you tried and what the user can do next, and offer the [onboarding call](https://cal.glasskube.com/team/gk/distr-onboarding).

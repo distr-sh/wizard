@@ -88,7 +88,14 @@ api /applications/<applicationId>/versions -X POST \
   -F 'templatefile=@deploy/distr/values.template.yaml;type=application/yaml' | jq '{id, name}'
 ```
 
-`helm push` needs `helm registry login registry.distr.sh -u - --password-stdin < "$config_home/distr/token"` first. For a chart repository, use `"chartType":"repository"` with `chartName`, the repository URL as `chartUrl` and `chartVersion`.
+`helm push` needs a registry login first:
+
+```sh
+case "${XDG_CONFIG_HOME:-}" in /*) config_home=$XDG_CONFIG_HOME ;; *) config_home=$HOME/.config ;; esac
+helm registry login registry.distr.sh -u - --password-stdin < "$config_home/distr/token"
+```
+
+For a chart repository, use `"chartType":"repository"` with `chartName`, the repository URL as `chartUrl` and `chartVersion`.
 
 ## Images
 
@@ -109,20 +116,26 @@ api /applications/<applicationId>/title-image -X PATCH -H 'Content-Type: applica
 
 ## Branding
 
-Read the current branding first. Distr answers 404 when none is set, which leaves `{}`:
+Read the current branding first. Distr answers `organization branding not found` when none is set:
 
 ```sh
-current=$(api /organization/branding 2>/dev/null) || current='{}'
-printf '%s' "$current" | jq '{title, description, logoImageId}'
+api /organization/branding | jq '{title, description, logoImageId}'
 ```
 
-Set the title, a one-line markdown description and the logo. The request replaces the branding, so it carries over the page title and the favicon:
+Set the title, a one-line markdown description and the logo. The request replaces the branding, so it carries over the page title and the favicon, and it starts from empty branding only when Distr answered 404:
 
 ```sh
-printf '%s' "$current" |
+branding=$(mktemp)
+code=$(api /organization/branding -o "$branding" -w '%{http_code}' 2>/dev/null) || true
+if [ "$code" = 404 ]; then echo '{}' >"$branding"; fi
+if [ "$code" = 200 ] || [ "$code" = 404 ]; then
   jq --arg title "<product name>" --arg description "<one line from the README>" --arg logo "<logo file id>" \
-    '{title: $title, description: $description, logoImageId: $logo, pageTitle, faviconImageId}' |
-  api /organization/branding -X PUT -H 'Content-Type: application/json' -d @- | jq '{title, logoImageId}'
+    '{title: $title, description: $description, logoImageId: $logo, pageTitle, faviconImageId}' "$branding" |
+    api /organization/branding -X PUT -H 'Content-Type: application/json' -d @- | jq '{title, logoImageId}'
+else
+  echo "Reading the branding failed with HTTP $code: $(cat "$branding")"
+fi
+rm -f "$branding"
 ```
 
 ## Customer
@@ -135,11 +148,12 @@ jq -n --arg logo "$logo" '{name: "Test customer", imageId: $logo}' |
 
 ## Secrets
 
-Store each secret for the test customer. Generate a password inside the command, so it never appears in the chat:
+Store each secret for the test customer. Generate a password inside the command and pipe it into `jq`, so it never appears in the chat or in a command line:
 
 ```sh
-jq -n --arg key POSTGRES_PASSWORD --arg value "$(openssl rand -hex 24)" --arg customer "<customerOrganizationId>" \
-  '{key: $key, value: $value, customerOrganizationId: $customer}' |
+openssl rand -hex 24 |
+  jq -R --arg key POSTGRES_PASSWORD --arg customer "<customerOrganizationId>" \
+    '{key: $key, value: ., customerOrganizationId: $customer}' |
   api /secrets -X POST -H 'Content-Type: application/json' -d @- | jq '{id, key}'
 ```
 

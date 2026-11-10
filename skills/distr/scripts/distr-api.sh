@@ -14,9 +14,14 @@ if [ ! -s "$token_file" ]; then
   exit 3
 fi
 
+# The header goes through a file only this user can read, since curl's arguments show up in process listings.
+header=$(mktemp)
+trap 'rm -f "$header"' EXIT
+printf 'Authorization: AccessToken %s\n' "$(cat "$token_file")" >"$header"
+
 path=$1
 shift
-exec curl -sS --fail-with-body \
-  -H "Authorization: AccessToken $(cat "$token_file")" \
+curl -sS --fail-with-body \
+  -H @"$header" \
   -H 'User-Agent: distr-skill/0.1.0' \
   "${DISTR_API_BASE:-https://app.distr.sh/api/v1}$path" "$@"

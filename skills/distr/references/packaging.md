@@ -23,6 +23,20 @@ POSTGRES_PASSWORD={{ .Secrets.POSTGRES_PASSWORD }}
 
 `test-customer.env` is the same file filled in for this machine, for example `PUBLIC_URL=http://localhost:8080`.
 
+### Local test
+
+Distr fills in the `{{ .Secrets.KEY }}` references at deploy time, so `docker compose` cannot read `test-customer.env` as it is. Test with a copy outside the repository that has a generated value in place of every reference, and delete it afterwards:
+
+```sh
+env=$(mktemp)
+sed -E "s/\{\{ *\.Secrets\.[A-Za-z0-9_]+ *\}\}/$(openssl rand -hex 24)/g" deploy/distr/test-customer.env >"$env"
+docker compose -f deploy/distr/compose.yaml --env-file "$env" config >/dev/null
+docker compose -f deploy/distr/compose.yaml --env-file "$env" up -d --wait
+# check that the application answers, then:
+docker compose -f deploy/distr/compose.yaml --env-file "$env" down -v
+rm -f "$env"
+```
+
 ## Helm
 
 Start from the existing chart when there is one. Otherwise write a chart only when phase 2 chose Helm, and keep it small: a Deployment and a Service per component, an optional Ingress, and a Secret for credentials.
@@ -56,7 +70,7 @@ The customer runs the dependency, Amazon RDS or S3 for example, and configures t
 - Remove the service from the stack.
 - Read the connection from variables: a URL (`DATABASE_URL`), or host, port, user and database, plus TLS settings where the client supports them.
 - Keep credentials as `{{ .Secrets.KEY }}` references in the template, and document in it which version and which permissions the application needs.
-- For the test customer, run the dependency on this machine outside the package, `docker run` a PostgreSQL for example after asking, and point the test environment at it via `host.docker.internal`.
+- For the test customer, run the dependency on this machine outside the package, `docker run` a PostgreSQL for example after asking, and point the test environment at it via `host.docker.internal`. Docker Desktop resolves that name on its own, Linux only with `extra_hosts: ['host.docker.internal:host-gateway']` on the services that connect, so add it to them. It does no harm on customer machines.
 
 ### Hosted services
 
