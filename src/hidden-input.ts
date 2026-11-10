@@ -2,12 +2,12 @@ import type {ReadStream} from 'node:tty';
 
 export type InputState = {value: string; done: boolean; cancelled: boolean};
 
+// Arrow and function keys, and the markers of bracketed paste, arrive as escape sequences that can share a chunk
+// with typed or pasted characters.
+const escapeSequence = /\u001b(?:\[[0-9;?]*[ -/]*[@-~]|O.|.)?/g;
+
 export function applyInput(value: string, chunk: string): InputState {
-  // Arrow and function keys arrive as one escape sequence per chunk.
-  if (chunk.startsWith('\u001b')) {
-    return {value, done: false, cancelled: false};
-  }
-  for (const char of chunk) {
+  for (const char of chunk.replace(escapeSequence, '')) {
     if (char === '\u0003') {
       return {value: '', done: false, cancelled: true};
     } else if (char === '\r' || char === '\n' || char === '\u0004') {

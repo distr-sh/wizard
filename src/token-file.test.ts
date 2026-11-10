@@ -12,7 +12,7 @@ test('the token file lives under an absolute XDG_CONFIG_HOME, and under ~/.confi
 });
 
 test(
-  'saving replaces a file readable by others with one only the user can read',
+  'saving leaves a file and a directory only the user can read, whatever was there before',
   {skip: process.platform === 'win32'},
   async () => {
     const dir = await mkdtemp(join(tmpdir(), 'distr-wizard-'));
@@ -20,6 +20,7 @@ test(
       const file = join(dir, 'distr', 'token');
       await saveToken(file, 'distr-old');
       await chmod(file, 0o644);
+      await chmod(join(dir, 'distr'), 0o755);
       await saveToken(file, 'distr-new');
       assert.equal(await readFile(file, 'utf8'), 'distr-new\n');
       assert.equal((await stat(file)).mode & 0o777, 0o600);
