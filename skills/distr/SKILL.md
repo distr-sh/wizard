@@ -98,7 +98,7 @@ Write into `deploy/distr/`:
 
 The customer's controller has to be able to pull every image. Public images work as they are. Images built from this repository have to be pushed to a registry, the Distr registry by default (`references/api.md#registry`).
 
-Ask, then test the package on this machine before Distr is involved, with a filled-in copy of `test-customer.env` outside the repository (`references/packaging.md#local-test`): `docker compose config`, then `up -d`, check that the application answers, then `down -v`. For Helm run `helm lint` and `helm template`. Fix what fails before you continue.
+Ask, then test the package on this machine before Distr is involved, with the images of this repository built locally and generated secrets (`references/packaging.md#local-test`): `docker compose config`, then `up`, check that the application answers, then `down -v`. For Helm run `helm lint` and `helm template`. Fix what fails before you continue.
 
 ## 5. Get access to Distr
 
@@ -114,7 +114,7 @@ Then wait. Never ask the user to paste the token into the chat.
 
 Follow the recipes in `references/api.md`, and write every ID into `deploy/distr/distr.json` as soon as you have it:
 
-1. Push the images built from this repository, after asking (`#registry`).
+1. Push the images built from this repository, after asking, and replace `<slug>` in their image paths (`#registry`).
 2. Create the application (`#application`). Use the `semver` versioning strategy when the versions are semantic versions, `chronological` otherwise.
 3. Create the first version with the package files (`#version`).
 4. Give the application its images (`#images`): the logo as its image and a screenshot of the product as its title image, which customers see on their home page. Ask the user when you find neither.
@@ -122,7 +122,7 @@ Follow the recipes in `references/api.md`, and write every ID into `deploy/distr
 
 ## 7. Deploy to a test customer
 
-A Helm deployment needs a Kubernetes cluster on this machine, so check before you create anything in this phase. When `kubectl config current-context` names a local cluster such as kind, k3d, minikube, Docker Desktop or OrbStack, ask whether to use it. Otherwise skip to phase 8 and explain that the chart is in Distr and ready to deploy.
+A Helm deployment needs a Kubernetes cluster on this machine, so for Helm check before you create anything in this phase. When `kubectl config current-context` names a local cluster such as kind, k3d, minikube, Docker Desktop or OrbStack, ask whether to use it. Without one, skip to phase 8 and explain that the chart is in Distr and ready to deploy. A Compose deployment always continues here.
 
 Follow `references/api.md`:
 

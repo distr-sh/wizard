@@ -25,16 +25,35 @@ POSTGRES_PASSWORD={{ .Secrets.POSTGRES_PASSWORD }}
 
 ### Local test
 
-Distr fills in the `{{ .Secrets.KEY }}` references at deploy time, so `docker compose` cannot read `test-customer.env` as it is. Test with a copy outside the repository that has a generated value in place of every reference, and delete it afterwards:
+The images built from this repository are only pushed in phase 6, and Distr fills in the `{{ .Secrets.KEY }}` references at deploy time, so the package cannot run as it is. Until phase 6 gives the organization a slug, leave `<slug>` in their image paths.
+
+Write `deploy/distr/.gitignore` with the two files the test adds, so neither is ever committed:
+
+```gitignore
+.env
+compose.local-test.yaml
+```
+
+Write `deploy/distr/compose.local-test.yaml`, which builds each image of this repository under a local tag, with the build context relative to `deploy/distr/`, and gives the test a project name of its own, so `down -v` removes nothing else:
+
+```yaml
+name: <repository name>-local-test
+services:
+  <service>:
+    build: ../..
+    image: <service>:local-test
+```
+
+Then fill in the secret references with generated values in `.env`, where the controller also puts the environment file, run the test and remove both files:
 
 ```sh
-env=$(mktemp)
-sed -E "s/\{\{ *\.Secrets\.[A-Za-z0-9_]+ *\}\}/$(openssl rand -hex 24)/g" deploy/distr/test-customer.env >"$env"
-docker compose -f deploy/distr/compose.yaml --env-file "$env" config >/dev/null
-docker compose -f deploy/distr/compose.yaml --env-file "$env" up -d --wait
+cd deploy/distr
+sed -E "s/\{\{ *\.Secrets\.[A-Za-z0-9_]+ *\}\}/$(openssl rand -hex 24)/g" test-customer.env >.env
+docker compose -f compose.yaml -f compose.local-test.yaml config >/dev/null
+docker compose -f compose.yaml -f compose.local-test.yaml up -d --build --wait
 # check that the application answers, then:
-docker compose -f deploy/distr/compose.yaml --env-file "$env" down -v
-rm -f "$env"
+docker compose -f compose.yaml -f compose.local-test.yaml down -v
+rm -f .env compose.local-test.yaml
 ```
 
 ## Helm

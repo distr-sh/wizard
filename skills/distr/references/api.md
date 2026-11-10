@@ -126,7 +126,7 @@ Set the title, a one-line markdown description and the logo. The request replace
 
 ```sh
 branding=$(mktemp)
-code=$(api /organization/branding -o "$branding" -w '%{http_code}' 2>/dev/null) || true
+code=$(api /organization/branding -o "$branding" -w '%{http_code}') || true
 if [ "$code" = 404 ]; then echo '{}' >"$branding"; fi
 if [ "$code" = 200 ] || [ "$code" = 404 ]; then
   jq --arg title "<product name>" --arg description "<one line from the README>" --arg logo "<logo file id>" \
@@ -197,10 +197,11 @@ api /deployment-targets/<deploymentTargetId> | jq '.deployments[] | {id, applica
 
 ## Connect
 
-Ask before you connect. The connect command carries the target secret, so pipe it straight into the shell and never print it or the response:
+Ask before you connect. The connect command carries the target secret, so never print it or the response, and pass it to the shell only when Distr returned one:
 
 ```sh
-api /deployment-targets/<deploymentTargetId>/access-request -X POST | jq -r .connectCommand | sh
+connect=$(api /deployment-targets/<deploymentTargetId>/access-request -X POST | jq -er '.connectCommand // empty') &&
+  printf '%s\n' "$connect" | sh
 ```
 
 The Docker controller starts as the container `distr-controller-1`. For Kubernetes the command applies the controller to the target's namespace with `kubectl`.
