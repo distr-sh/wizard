@@ -1,11 +1,11 @@
 import {Client} from '@distr-sh/distr-sdk';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
+import {apiBase} from './api.ts';
 import {isAtLeast, parseVersion, type Version} from './version.ts';
 
 const execFileAsync = promisify(execFile);
 
-const defaultApiBase = 'https://app.distr.sh/api/v1';
 const minimumDockerEngine: Version = [29, 0, 0];
 
 export type CheckResult = {
@@ -62,7 +62,7 @@ async function checkDistrToken(apiBase: string, apiKey: string): Promise<CheckRe
 export async function doctor(env: NodeJS.ProcessEnv): Promise<CheckResult[]> {
   const checks = [checkDockerEngine(), checkDockerCompose()];
   if (env.DISTR_TOKEN) {
-    checks.push(checkDistrToken(env.DISTR_API_BASE || defaultApiBase, env.DISTR_TOKEN));
+    checks.push(checkDistrToken(apiBase(env), env.DISTR_TOKEN));
   }
   return Promise.all(checks);
 }
