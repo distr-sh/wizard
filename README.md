@@ -22,6 +22,19 @@ npx @distr-sh/wizard doctor
 
 The exit code is 0 when every check passes, 1 when one fails and 2 for invalid usage.
 
+## Agent skill
+
+[`skills/distr`](skills/distr/SKILL.md) is an [agent skill](https://agentskills.io) that onboards a project to Distr. Ask your coding agent to "onboard this project to Distr" and it packages the application as a Docker Compose file or a Helm chart, resolves its dependencies, creates the application and a test customer through the Distr API and deploys it to a controller on your machine. It writes everything into `deploy/distr/` and asks before it starts containers, pushes images or connects the controller.
+
+Install it into your project with either:
+
+```shell
+npx skills add distr-sh/wizard
+gh skill install distr-sh/wizard distr
+```
+
+The skill never sees your access token. You save it in your own terminal with `npx @distr-sh/wizard login`, and the skill's API calls read it from there.
+
 ## Principles
 
 - The wizard installs nothing on your machine. It checks what is there and tells you what is missing.
